@@ -3,7 +3,6 @@ from flask_restful import reqparse, Resource, Api
 from base64 import b64decode
 from whisper_jax import FlaxWhisperPipeline 
 import jax.numpy as jnp
-from jax.experimental.compilation_cache import compilation_cache as cc
 
 app = Flask(__name__)
 api = Api(app)
