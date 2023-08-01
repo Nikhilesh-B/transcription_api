@@ -1,0 +1,5 @@
+flask
+flask_restful
+base64
+whisper_jax
+jax
