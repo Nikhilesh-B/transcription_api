@@ -32,5 +32,7 @@ class Transcription(Resource):
 
         return jsonify({'transcription':text})
 
+api.add_resource(Transcription, '/')
 
-api.add_resource()
+if __name__ == "__main__":
+    app.run(debug=True)

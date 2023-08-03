@@ -1,5 +1,5 @@
 flask
 flask_restful
 base64
-whisper_jax
+git+https://github.com/sanchit-gandhi/whisper-jax.git
 jax
