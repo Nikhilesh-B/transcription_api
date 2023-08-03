@@ -1,0 +1,4 @@
+Changes we made: 
+1. Using the tiniest model possible (potentially we could use a mid sized model for inference)
+2. Making the fixes to the library as stated by this following webpage https://github.com/sanchit-gandhi/whisper-jax/issues/122
+3. We're going to have to download ffmpeg to the system; let's try one more time

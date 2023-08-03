@@ -12,9 +12,10 @@ class Transcription(Resource):
         self.parser = reqparse.RequestParser()
         self.parser.add_argument('audio_byte_string')
         self.count = 0
-        self.pipeline = FlaxWhisperPipline("openai/whisper-large-v2",batch_size=16)
+        self.pipeline = FlaxWhisperPipline("openai/whisper-tiny",batch_size=16)
 
     def post(self):
+        print("Hello up here")
         args = self.parser.parse_args()
         audio_byte_string = args['audio_byte_string']
         audio_data_raw_bytes = b64decode(audio_byte_string)
@@ -24,12 +25,12 @@ class Transcription(Resource):
 
         ##then we take this and use the whisper jax configuration to devleop the rest of this part 
         # translate
-        text = self.pipeline("audio.mp3", task="translate")
+        text = self.pipeline(file_name, task="translate")
         self.count+=1
 
         return jsonify({'transcription':text})
 
-api.add_resource(Transcription, '/transcription/')
+api.add_resource(Transcription, '/transcription')
 
 if __name__ == "__main__":
     app.run(debug=True)
