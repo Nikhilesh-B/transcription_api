@@ -1,8 +1,7 @@
 from flask import Flask, jsonify
 from flask_restful import reqparse, Resource, Api
 from base64 import b64decode
-from whisper_jax import FlaxWhisperPipeline 
-import jax.numpy as jnp
+from whisper_jax import FlaxWhisperPipline 
 
 app = Flask(__name__)
 api = Api(app)
@@ -13,9 +12,7 @@ class Transcription(Resource):
         self.parser = reqparse.RequestParser()
         self.parser.add_argument('audio_byte_string')
         self.count = 0
-        self.pipeline = FlaxWhisperPipline("openai/whisper-large-v2",
-                                            dtype=jnp.dtype16,
-                                            batch_size=16)
+        self.pipeline = FlaxWhisperPipline("openai/whisper-large-v2",batch_size=16)
 
     def post(self):
         args = self.parser.parse_args()
@@ -32,7 +29,7 @@ class Transcription(Resource):
 
         return jsonify({'transcription':text})
 
-api.add_resource(Transcription, '/')
+api.add_resource(Transcription, '/transcription/')
 
 if __name__ == "__main__":
     app.run(debug=True)
