@@ -1,5 +1,3 @@
 flask
 flask_restful
-base64
-git+https://github.com/sanchit-gandhi/whisper-jax.git
-jax[tpu] -f https://storage.googleapis.com/jax-releases/libtpu_releases.html
+pybase64
