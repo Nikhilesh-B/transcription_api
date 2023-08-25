@@ -2,6 +2,10 @@ from flask import Flask, jsonify
 from flask_restful import reqparse, Resource, Api
 from base64 import b64decode
 from whisper_jax import FlaxWhisperPipline 
+from gradio_client import Client
+
+API_URL = "https://sanchit-gandhi-whisper-jax.hf.space/"
+
 
 app = Flask(__name__)
 api = Api(app)
@@ -13,6 +17,16 @@ class Transcription(Resource):
         self.parser.add_argument('audio_byte_string')
         self.count = 0
         self.pipeline = FlaxWhisperPipline("openai/whisper-tiny",batch_size=16)
+        self.client = Client(API_URL)
+    def transcribe_audio(self, audio_path, return_timestamps=False):
+        """Function to transcribe an audio file using the Whisper JAX endpoint."""
+        task = "transcribe"
+        text, runtime = self.client.predict(audio_path, 
+                                       task,
+                                       return_timestamps,
+                                       api_name="/predict_1")
+    
+        return text
 
     def post(self):
         print("Hello up here")
@@ -22,11 +36,9 @@ class Transcription(Resource):
         file_name = 'conversation'+str(self.count)+'.mp3'
         with open(file_name, 'wb') as audio_file:
             audio_file.write(audio_data_raw_bytes)
-
-        ##then we take this and use the whisper jax configuration to devleop the rest of this part 
-        # translate
-        text = self.pipeline(file_name, task="translate")
-        self.count+=1
+        
+        text = self.transcribe_audio(file_name)
+        print(text)
 
         return jsonify({'transcription':text})
 
