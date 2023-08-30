@@ -1,7 +1,11 @@
 from flask import Flask, jsonify, request, render_template, make_response
 from flask_restful import reqparse, Resource, Api
 from pybase64 import b64decode
-# from whisper_jax import FlaxWhisperPipline 
+import os
+from google.cloud import storage
+from gradio_client import Client
+
+API_URL = "https://sanchit-gandhi-whisper-jax.hf.space/"
 
 app = Flask(__name__)
 api = Api(app)
@@ -9,34 +13,78 @@ api = Api(app)
 class Transcription(Resource):
     def __init__(self) -> None:
         super().__init__()
-        self.parser = reqparse.RequestParser()
-        self.parser.add_argument('audio_byte_string')
         self.count = 0
-        # self.pipeline = FlaxWhisperPipline("openai/whisper-large-v2",batch_size=16)
+        self.client = Client(API_URL)
+        self.bucket_name = "supportify-394619.appspot.com"
+
+    def transcribe_audio(self, audio_path, return_timestamps=False):
+        """Function to transcribe an audio file using the Whisper JAX endpoint."""
+        task = "transcribe"
+        text, runtime = self.client.predict(audio_path, 
+                                       task,
+                                       return_timestamps,
+                                       api_name="/predict_1")
+    
+        return text
+
+    def writeb_to_bucket(self, bucket_name, blob_name, bites):
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+
+        with blob.open("wb") as f:
+            f.write(bites)
+    
+    def readb_from_bucket(self, bucket_name, blob_name):
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+
+        with blob.open("rb") as f:
+            bites = f.read()
+        
+        return bites
+
+    def list_bucket_contents(self, bucket_name):
+        storage_client = storage.Client()
+
+        blobs = storage_client.list_blobs(bucket_name)
+        blobnames = [blob.name for blob in blobs]
+
+        return blobnames
 
     def post(self):
         data = request.get_json()
 
-        decoded = b64decode(data["data"]).decode("utf-8")
+        filename = data["filename"]
+        decoded = b64decode(data["audio_byte_string"]) #bytes format
+        
+        storage_client = storage.Client()
 
-        return decoded, 200
+        self.writeb_to_bucket(self.bucket_name, filename, decoded)
 
-    # def post(self):
-        # args = self.parser.parse_args()
-    #     audio_byte_string = args['audio_byte_string']
-    #     audio_data_raw_bytes = b64decode(audio_byte_string) #! will be able to get to here
-    #     file_name = 'conversation'+str(self.count)+'.mp3'
-    #     with open(file_name, 'wb') as audio_file: #!need to write to GCP Cloud storage not local file
-    #         audio_file.write(audio_data_raw_bytes)
+        ##TODO: implement deletion of audio file from bucket
 
-    #     ##then we take this and use the whisper jax configuration to devleop the rest of this part 
-    #     # translate
-    #     text = self.pipeline("audio.mp3", task="translate")
-    #     self.count+=1
+        tmp_filename = "/tmp/audio.mp3" #will overwrite last-transcripted audio (file does not persist)
+        with open(tmp_filename, 'wb') as audio_file:
+            bucket = storage_client.get_bucket(self.bucket_name)
+            blob = bucket.blob(filename)
+            blob.download_to_file(audio_file)
+        
+        text = self.transcribe_audio(tmp_filename)
 
-    #     return jsonify({'transcription':text})
+        contents = self.list_bucket_contents(self.bucket_name)
+
+        return {"transcription":text,"bucket-contents":contents}, 200
+
+    def get(self):
+        return self.list_bucket_contents(self.bucket_name)
+
 
 class Echo(Resource):
+    """
+    A dummy resource. Useful to test in-browser whether cloud deployment was successful.
+    """
     def get(self):
         headers = {"content-type":"text/html"}
         resp = make_response(render_template('index.html'), 200, headers)
