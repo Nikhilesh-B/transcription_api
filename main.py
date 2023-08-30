@@ -78,7 +78,7 @@ class Transcription(Resource):
         return {"transcription":text,"bucket-contents":contents}, 200
 
     def get(self):
-        return self.list_bucket_contents(self.bucket_name)
+        return {"bucket-contents":self.list_bucket_contents(self.bucket_name)}
 
 
 class Echo(Resource):
