@@ -87,7 +87,7 @@ class Echo(Resource):
     """
     def get(self):
         headers = {"content-type":"text/html"}
-        resp = make_response(render_template('index.html'), 200, headers)
+        resp = make_response(render_template('echo.html'), 200, headers)
         return resp
 
     def post(self):
